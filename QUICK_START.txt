@@ -1,0 +1,83 @@
+╔══════════════════════════════════════════════════════════════╗
+║         Canvas.io Scan Fetcher - Quick Start Guide          ║
+╚══════════════════════════════════════════════════════════════╝
+
+🚀 GET STARTED IN 3 STEPS:
+
+┌──────────────────────────────────────────────────────────────┐
+│ STEP 1: Install Dependencies                                 │
+└──────────────────────────────────────────────────────────────┘
+
+Open terminal/command prompt in the project folder and run:
+
+    npm install
+    npm run install-browser
+
+This will install Node.js packages and the Chromium browser.
+
+┌──────────────────────────────────────────────────────────────┐
+│ STEP 2: Start the Backend Server                            │
+└──────────────────────────────────────────────────────────────┘
+
+In the same terminal, run:
+
+    npm start
+
+OR
+
+    node canvas-scraper-backend.js
+
+You should see:
+    ✓ Server running on: http://localhost:3000
+
+Leave this terminal window open!
+
+┌──────────────────────────────────────────────────────────────┐
+│ STEP 3: Open the Interface                                  │
+└──────────────────────────────────────────────────────────────┘
+
+Double-click: canvas-scraper.html
+
+Or drag and drop it into your browser.
+
+Enter your Canvas.io email and password, then click "Start Fetching"!
+
+═══════════════════════════════════════════════════════════════
+
+📦 WHAT YOU GET:
+
+✓ Beautiful modern interface
+✓ Real-time progress tracking
+✓ Automatic data caching
+✓ Download results as CSV or JSON
+✓ Statistics dashboard
+
+═══════════════════════════════════════════════════════════════
+
+💡 TIPS:
+
+• Keep the terminal running while fetching scans
+• Results are cached - re-running won't duplicate data
+• Data is saved in the 'canvas_data' folder
+• Press Ctrl+C in terminal to stop the server
+
+═══════════════════════════════════════════════════════════════
+
+🔧 TROUBLESHOOTING:
+
+Problem: "Backend not connected"
+→ Make sure you ran 'npm start' first!
+
+Problem: "Port 3000 is already in use"
+→ Edit canvas-scraper-backend.js and change PORT to 3001
+→ Also update BACKEND_URL in canvas-scraper.html
+
+Problem: Login fails
+→ Verify your Canvas.io credentials
+→ Check if Canvas.io requires 2FA (not supported yet)
+
+═══════════════════════════════════════════════════════════════
+
+📚 For more details, see: README.md
+
+Happy scanning! 🎨

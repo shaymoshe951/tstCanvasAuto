@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canvas.io Scan Fetcher</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+        }
+
+        input[type="text"],
+        input[type="password"],
+        input[type="email"] {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus,
+        input[type="password"]:focus,
+        input[type="email"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 14px 32px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #36d1dc 0%, #5b86e5 100%);
+            margin-top: 10px;
+        }
+
+        .progress-container {
+            margin: 20px 0;
+            display: none;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        .status-message {
+            margin-top: 10px;
+            padding: 12px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .status-message.info {
+            background: #e3f2fd;
+            color: #1565c0;
+            border-left: 4px solid #1565c0;
+        }
+
+        .status-message.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border-left: 4px solid #2e7d32;
+        }
+
+        .status-message.error {
+            background: #ffebee;
+            color: #c62828;
+            border-left: 4px solid #c62828;
+        }
+
+        .data-section {
+            display: none;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #667eea;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        tr:hover {
+            background: #f5f5f5;
+        }
+
+        td a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        td a:hover {
+            text-decoration: underline;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            font-size: 2em;
+            margin-bottom: 5px;
+        }
+
+        .stat-card p {
+            opacity: 0.9;
+        }
+
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .button-group .btn {
+            width: auto;
+            flex: 1;
+        }
+
+        .browser-preview {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .screenshot-container {
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        .browser-preview h3 {
+            margin: 0 0 10px 0;
+            font-size: 1.2em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎨 Canvas.io Scan Fetcher</h1>
+            <p>Fetch and download your scans with ease</p>
+        </div>
+
+        <div class="content">
+            <!-- Login Section -->
+            <div class="section" id="loginSection">
+                <h2>Login to Canvas.io</h2>
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" placeholder="Enter your email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" placeholder="Enter your password" required>
+                    </div>
+                    <div class="form-group">
+                        <label style="display: flex; align-items: center; cursor: pointer;">
+                            <input type="checkbox" id="showBrowser" checked style="margin-right: 10px; width: 20px; height: 20px; cursor: pointer;">
+                            <span>Show browser window (uncheck for headless mode)</span>
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label style="display: flex; align-items: center; cursor: pointer;">
+                            <input type="checkbox" id="showBrowserPreview" checked style="margin-right: 10px; width: 20px; height: 20px; cursor: pointer;">
+                            <span>Show browser preview (live screenshots)</span>
+                        </label>
+                    </div>
+                    <button type="submit" class="btn" id="loginBtn">
+                        Start Fetching <span id="loadingSpinner" style="display: none;" class="loading-spinner"></span>
+                    </button>
+                </form>
+
+                <div class="progress-container" id="progressContainer">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill">0%</div>
+                    </div>
+                </div>
+
+                <div class="status-message" id="statusMessage"></div>
+
+                <!-- Browser Preview Section -->
+                <div class="browser-preview" id="browserPreview" style="display: none;">
+                    <h3 style="margin-bottom: 10px; color: #333;">Browser Activity</h3>
+                    <div class="screenshot-container">
+                        <img id="browserScreenshot" src="" alt="Browser activity" style="width: 100%; border: 2px solid #667eea; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                        <p id="screenshotCaption" style="margin-top: 10px; text-align: center; color: #666; font-style: italic;"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Section -->
+            <div class="section data-section" id="dataSection">
+                <h2>Scans Data</h2>
+                
+                <div class="stats" id="statsContainer" style="display: none;">
+                    <div class="stat-card">
+                        <h3 id="totalScans">0</h3>
+                        <p>Total Scans</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 id="totalGroups">0</h3>
+                        <p>Groups</p>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-secondary" id="downloadCsvBtn" style="display: none;">
+                        📥 Download CSV
+                    </button>
+                    <button class="btn btn-secondary" id="downloadJsonBtn" style="display: none;">
+                        📥 Download JSON
+                    </button>
+                </div>
+
+                <div class="table-container" id="tableContainer" style="display: none;">
+                    <table id="dataTable">
+                        <thead>
+                            <tr>
+                                <th>Account Name</th>
+                                <th>Group</th>
+                                <th>Scan Text</th>
+                                <th>Scan URL</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration - Update this with your backend URL
+        const BACKEND_URL = 'http://localhost:3000';
+        
+        let scansData = [];
+
+        // DOM Elements
+        const loginForm = document.getElementById('loginForm');
+        const loginBtn = document.getElementById('loginBtn');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressFill = document.getElementById('progressFill');
+        const statusMessage = document.getElementById('statusMessage');
+        const dataSection = document.getElementById('dataSection');
+        const tableContainer = document.getElementById('tableContainer');
+        const tableBody = document.getElementById('tableBody');
+        const downloadCsvBtn = document.getElementById('downloadCsvBtn');
+        const downloadJsonBtn = document.getElementById('downloadJsonBtn');
+        const statsContainer = document.getElementById('statsContainer');
+        const totalScans = document.getElementById('totalScans');
+        const totalGroups = document.getElementById('totalGroups');
+        const browserPreview = document.getElementById('browserPreview');
+        const browserScreenshot = document.getElementById('browserScreenshot');
+        const screenshotCaption = document.getElementById('screenshotCaption');
+
+        // Show status message
+        function showStatus(message, type = 'info') {
+            statusMessage.textContent = message;
+            statusMessage.className = `status-message ${type}`;
+            statusMessage.style.display = 'block';
+        }
+
+        // Update progress bar
+        function updateProgress(percent) {
+            progressFill.style.width = `${percent}%`;
+            progressFill.textContent = `${Math.round(percent)}%`;
+        }
+
+        // Update statistics
+        function updateStats() {
+            const uniqueGroups = new Set(scansData.map(scan => scan.group)).size;
+            totalScans.textContent = scansData.length;
+            totalGroups.textContent = uniqueGroups;
+            statsContainer.style.display = scansData.length > 0 ? 'grid' : 'none';
+        }
+
+        // Render table
+        function renderTable() {
+            tableBody.innerHTML = '';
+            scansData.forEach((scan, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${scan.account_name}</td>
+                    <td>${scan.group}</td>
+                    <td>${scan.scan_text}</td>
+                    <td><a href="${scan.scan_url}" target="_blank">View Scan</a></td>
+                `;
+                tableBody.appendChild(row);
+            });
+            tableContainer.style.display = scansData.length > 0 ? 'block' : 'none';
+            downloadCsvBtn.style.display = scansData.length > 0 ? 'block' : 'none';
+            downloadJsonBtn.style.display = scansData.length > 0 ? 'block' : 'none';
+        }
+
+        // Download CSV
+        function downloadCsv() {
+            const headers = ['Account Name', 'Group', 'Scan Text', 'Scan URL'];
+            const csvContent = [
+                headers.join(','),
+                ...scansData.map(scan => 
+                    [scan.account_name, scan.group, scan.scan_text, scan.scan_url]
+                        .map(field => `"${field}"`)
+                        .join(',')
+                )
+            ].join('\n');
+
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `canvas_scans_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Download JSON
+        function downloadJson() {
+            const jsonContent = JSON.stringify(scansData, null, 2);
+            const blob = new Blob([jsonContent], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `canvas_scans_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Handle form submission
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const showBrowser = document.getElementById('showBrowser').checked;
+            const showBrowserPreview = document.getElementById('showBrowserPreview').checked;
+
+            // Disable form
+            loginBtn.disabled = true;
+            loadingSpinner.style.display = 'inline-block';
+            progressContainer.style.display = 'block';
+            updateProgress(0);
+            showStatus('Connecting to Canvas.io...', 'info');
+
+            try {
+                // Create EventSource for SSE (Server-Sent Events)
+                const eventSource = new EventSource(
+                    `${BACKEND_URL}/fetch-scans?email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}&headless=${!showBrowser}&screenshots=${showBrowserPreview}`
+                );
+
+                eventSource.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+                    
+                    if (data.type === 'progress') {
+                        updateProgress(data.progress);
+                        showStatus(data.message, 'info');
+                    } else if (data.type === 'screenshot') {
+                        // Display browser screenshot (only if enabled)
+                        if (showBrowserPreview) {
+                            browserPreview.style.display = 'block';
+                            browserScreenshot.src = `data:image/png;base64,${data.screenshot}`;
+                            screenshotCaption.textContent = data.caption || 'Browser activity';
+                        }
+                    } else if (data.type === 'data') {
+                        scansData = data.scans;
+                        renderTable();
+                        updateStats();
+                        dataSection.style.display = 'block';
+                    } else if (data.type === 'complete') {
+                        showStatus('✅ Scan fetching completed successfully!', 'success');
+                        updateProgress(100);
+                        eventSource.close();
+                        loginBtn.disabled = false;
+                        loadingSpinner.style.display = 'none';
+                    } else if (data.type === 'error') {
+                        showStatus(`❌ Error: ${data.message}`, 'error');
+                        eventSource.close();
+                        loginBtn.disabled = false;
+                        loadingSpinner.style.display = 'none';
+                    }
+                };
+
+                eventSource.onerror = (error) => {
+                    console.error('EventSource error:', error);
+                    showStatus('❌ Connection error. Make sure the backend server is running.', 'error');
+                    eventSource.close();
+                    loginBtn.disabled = false;
+                    loadingSpinner.style.display = 'none';
+                };
+
+            } catch (error) {
+                console.error('Error:', error);
+                showStatus(`❌ Error: ${error.message}`, 'error');
+                loginBtn.disabled = false;
+                loadingSpinner.style.display = 'none';
+            }
+        });
+
+        // Download button handlers
+        downloadCsvBtn.addEventListener('click', downloadCsv);
+        downloadJsonBtn.addEventListener('click', downloadJson);
+
+        // Check if backend is available on page load
+        fetch(`${BACKEND_URL}/health`)
+            .then(response => {
+                if (response.ok) {
+                    showStatus('✅ Backend server connected', 'success');
+                    setTimeout(() => {
+                        statusMessage.style.display = 'none';
+                    }, 3000);
+                } else {
+                    throw new Error('Backend not responding');
+                }
+            })
+            .catch(() => {
+                showStatus('⚠️ Backend server not available. Please start the Node.js backend server.', 'error');
+            });
+    </script>
+</body>
+</html>
