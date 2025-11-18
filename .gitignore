@@ -1,0 +1,32 @@
+# Node modules
+node_modules/
+
+# Data files
+canvas_data/
+*.json
+!package.json
+
+# Cache
+cache_chromium/
+.cache/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment variables
+.env
+.env.local
+
+# Browser contexts
+playwright/.auth/

@@ -1,0 +1,378 @@
+╔══════════════════════════════════════════════════════════════╗
+║      Browser Controls - Visual Comparison Guide             ║
+╚══════════════════════════════════════════════════════════════╝
+
+🎛️ TWO INDEPENDENT CONTROLS - FOUR COMBINATIONS
+
+Here's what each combination looks like in action!
+
+═══════════════════════════════════════════════════════════════
+
+INTERFACE WITH BOTH CHECKBOXES:
+═══════════════════════════════════════════════════════════════
+
+┌──────────────────────────────────────────────────────────────┐
+│  🎨 Canvas.io Scan Fetcher                                   │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Login to Canvas.io                                           │
+│                                                               │
+│ Email:    [john@example.com            ]                     │
+│ Password: [••••••••••                  ]                     │
+│                                                               │
+│ ☑ Show browser window (uncheck for headless mode)           │
+│   └─ Controls Playwright browser on desktop                 │
+│                                                               │
+│ ☑ Show browser preview (live screenshots)                   │
+│   └─ Controls screenshots in this web page                  │
+│                                                               │
+│ [Start Fetching]                                             │
+└──────────────────────────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════
+
+COMBO 1: ☑☑ Both Checked (DEFAULT)
+═══════════════════════════════════════════════════════════════
+
+Settings:
+☑ Show browser window
+☑ Show browser preview
+
+┌──────────────────────────────────────────────────────────────┐
+│ YOUR DESKTOP                                                 │
+│                                                               │
+│ ┌──────────────────────────┐  ┌────────────────────────┐   │
+│ │ Playwright Browser       │  │ Your Other Apps        │   │
+│ │ [Canvas.io visible]      │  │                        │   │
+│ │ You can see it here! ────┼─>│                        │   │
+│ └──────────────────────────┘  └────────────────────────┘   │
+└──────────────────────────────────────────────────────────────┘
+
+AND
+
+┌──────────────────────────────────────────────────────────────┐
+│ WEB INTERFACE (Your Browser)                                │
+│                                                               │
+│ Progress: ████████░░░░░░ 45%                                │
+│                                                               │
+│ ┌────────────────────────────────────────────────────────┐  │
+│ │ Browser Activity                                        │  │
+│ │ [Screenshot of Canvas.io]                              │  │
+│ │ Caption: Processing Medical Records                    │  │
+│ └────────────────────────────────────────────────────────┘  │
+└──────────────────────────────────────────────────────────────┘
+
+SUMMARY:
+• Desktop: Browser window VISIBLE
+• Web page: Screenshots SHOWN
+• Visual feedback: MAXIMUM
+• Best for: First use, debugging, learning
+• Speed: Normal
+
+═══════════════════════════════════════════════════════════════
+
+COMBO 2: ☑☐ Window Visible, No Preview
+═══════════════════════════════════════════════════════════════
+
+Settings:
+☑ Show browser window
+☐ Show browser preview
+
+┌──────────────────────────────────────────────────────────────┐
+│ YOUR DESKTOP                                                 │
+│                                                               │
+│ ┌──────────────────────────┐  ┌────────────────────────┐   │
+│ │ Playwright Browser       │  │ Your Other Apps        │   │
+│ │ [Canvas.io visible]      │  │                        │   │
+│ │ You can see it here! ────┼─>│                        │   │
+│ └──────────────────────────┘  └────────────────────────┘   │
+└──────────────────────────────────────────────────────────────┘
+
+AND
+
+┌──────────────────────────────────────────────────────────────┐
+│ WEB INTERFACE (Your Browser)                                │
+│                                                               │
+│ Progress: ████████░░░░░░ 45%                                │
+│                                                               │
+│ (No browser preview section)                                │
+└──────────────────────────────────────────────────────────────┘
+
+SUMMARY:
+• Desktop: Browser window VISIBLE
+• Web page: Screenshots HIDDEN
+• Visual feedback: Desktop only
+• Best for: Want to watch browser directly, save bandwidth
+• Speed: Faster (no screenshots)
+
+═══════════════════════════════════════════════════════════════
+
+COMBO 3: ☐☑ Headless with Preview (RECOMMENDED!)
+═══════════════════════════════════════════════════════════════
+
+Settings:
+☐ Show browser window (headless)
+☑ Show browser preview
+
+┌──────────────────────────────────────────────────────────────┐
+│ YOUR DESKTOP                                                 │
+│                                                               │
+│                          ┌────────────────────────┐          │
+│ No browser window!       │ Your Apps              │          │
+│ Clean desktop!           │ You can work freely!   │          │
+│                          │                        │          │
+│                          └────────────────────────┘          │
+└──────────────────────────────────────────────────────────────┘
+
+BUT
+
+┌──────────────────────────────────────────────────────────────┐
+│ WEB INTERFACE (Your Browser)                                │
+│                                                               │
+│ Progress: ████████░░░░░░ 45%                                │
+│                                                               │
+│ ┌────────────────────────────────────────────────────────┐  │
+│ │ Browser Activity                                        │  │
+│ │ [Screenshot of Canvas.io]                              │  │
+│ │ Caption: Processing Medical Records                    │  │
+│ └────────────────────────────────────────────────────────┘  │
+└──────────────────────────────────────────────────────────────┘
+
+SUMMARY:
+• Desktop: NO browser window (runs hidden!)
+• Web page: Screenshots SHOWN
+• Visual feedback: Web interface only
+• Best for: Regular use, clean desktop, still want feedback
+• Speed: Normal
+• ⭐ MOST POPULAR for experienced users!
+
+═══════════════════════════════════════════════════════════════
+
+COMBO 4: ☐☐ Full Headless (MAXIMUM SPEED)
+═══════════════════════════════════════════════════════════════
+
+Settings:
+☐ Show browser window (headless)
+☐ Show browser preview
+
+┌──────────────────────────────────────────────────────────────┐
+│ YOUR DESKTOP                                                 │
+│                                                               │
+│                          ┌────────────────────────┐          │
+│ No browser window!       │ Your Apps              │          │
+│ Silent execution!        │ No interruptions!      │          │
+│                          │                        │          │
+│                          └────────────────────────┘          │
+└──────────────────────────────────────────────────────────────┘
+
+AND
+
+┌──────────────────────────────────────────────────────────────┐
+│ WEB INTERFACE (Your Browser)                                │
+│                                                               │
+│ Progress: ████████░░░░░░ 45%                                │
+│                                                               │
+│ (No browser preview section)                                │
+└──────────────────────────────────────────────────────────────┘
+
+SUMMARY:
+• Desktop: NO browser window
+• Web page: Screenshots HIDDEN
+• Visual feedback: None (progress bar only)
+• Best for: Maximum speed, batch jobs, automation
+• Speed: FASTEST
+• Trust the automation!
+
+═══════════════════════════════════════════════════════════════
+
+COMPARISON TABLE:
+═══════════════════════════════════════════════════════════════
+
+┌────────┬─────────┬─────────┬────────────┬──────────────────┐
+│Setting │ Window  │Preview  │Visual FB   │ Best For         │
+├────────┼─────────┼─────────┼────────────┼──────────────────┤
+│ ☑☑     │ Visible │ Shown   │ Maximum    │ First use        │
+│        │         │         │            │ Debugging        │
+├────────┼─────────┼─────────┼────────────┼──────────────────┤
+│ ☑☐     │ Visible │ Hidden  │ Desktop    │ Save bandwidth   │
+│        │         │         │ only       │ Watch browser    │
+├────────┼─────────┼─────────┼────────────┼──────────────────┤
+│ ☐☑     │ Hidden  │ Shown   │ Web        │ Regular use ⭐   │
+│        │         │         │ interface  │ Clean desktop    │
+├────────┼─────────┼─────────┼────────────┼──────────────────┤
+│ ☐☐     │ Hidden  │ Hidden  │ Minimal    │ Max speed        │
+│        │         │         │            │ Automation       │
+└────────┴─────────┴─────────┴────────────┴──────────────────┘
+
+═══════════════════════════════════════════════════════════════
+
+SIDE-BY-SIDE: Window vs Headless
+═══════════════════════════════════════════════════════════════
+
+BROWSER WINDOW VISIBLE (☑):
+┌─────────────────────────────────────┐
+│ Chromium Browser                    │
+│ ┌─────────────────────────────────┐ │
+│ │ https://canvas.io              │ │
+│ ├─────────────────────────────────┤ │
+│ │                                 │ │
+│ │  Canvas.io                      │ │
+│ │  ┌───────────┐                  │ │
+│ │  │ Projects  │                  │ │
+│ │  │ Medical ✓ │                  │ │
+│ │  │ Legal     │                  │ │
+│ │  └───────────┘                  │ │
+│ │                                 │ │
+│ └─────────────────────────────────┘ │
+└─────────────────────────────────────┘
+  You can see this on your desktop!
+
+VS
+
+HEADLESS MODE (☐):
+┌─────────────────────────────────────┐
+│ Your Desktop                        │
+│                                     │
+│   [Nothing to see here]             │
+│   Browser running in background     │
+│   No window, no distraction         │
+│                                     │
+└─────────────────────────────────────┘
+  Clean and professional!
+
+═══════════════════════════════════════════════════════════════
+
+DECISION FLOWCHART:
+═══════════════════════════════════════════════════════════════
+
+START: Do you want to SEE the browser window on desktop?
+│
+├─ YES: Check "Show browser window" ☑
+│   │
+│   └─ Do you ALSO want screenshots in web page?
+│      ├─ YES: Check "Show browser preview" ☑  → ☑☑
+│      └─ NO:  Uncheck preview                 → ☑☐
+│
+└─ NO: Uncheck "Show browser window" ☐ (headless)
+    │
+    └─ Do you want screenshots in web page?
+       ├─ YES: Check "Show browser preview" ☑  → ☐☑ ⭐
+       └─ NO:  Uncheck preview                 → ☐☐
+
+═══════════════════════════════════════════════════════════════
+
+REAL-WORLD SCENARIOS:
+═══════════════════════════════════════════════════════════════
+
+📚 Scenario: Learning the Tool
+────────────────────────────────
+You: First time user
+Goal: Understand what's happening
+Setting: ☑☑ (both checked)
+Result: See browser window + screenshots
+        Complete understanding!
+
+💼 Scenario: Working on Report
+───────────────────────────────
+You: Writing a document
+Goal: Fetch scans without interruption
+Setting: ☐☑ (headless + preview)
+Result: No popup windows, clean desktop
+        Still see progress via screenshots
+
+🎬 Scenario: Screen Sharing
+────────────────────────────
+You: On video call, sharing screen
+Goal: Don't show browser to others
+Setting: ☐☐ (both unchecked)
+Result: Silent execution, no visual leaks
+        Professional presentation!
+
+🔧 Scenario: Debugging Login
+─────────────────────────────
+You: Login keeps failing
+Goal: See exactly what's wrong
+Setting: ☑☑ (both checked)
+Result: Watch browser, see screenshots
+        Spot the issue immediately!
+
+⚡ Scenario: Bulk Processing
+────────────────────────────
+You: Processing 500 scans overnight
+Goal: Maximum speed, minimal resources
+Setting: ☐☐ (both unchecked)
+Result: Fastest execution
+        No unnecessary overhead
+
+═══════════════════════════════════════════════════════════════
+
+VISUAL FEEDBACK COMPARISON:
+═══════════════════════════════════════════════════════════════
+
+☑☑ (Both Checked):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+████████████████████ 100% Visibility
+Desktop window + Web screenshots
+Maximum feedback!
+
+☑☐ (Window Only):
+━━━━━━━━━━━━━━━━━━━━━
+█████████████ 65% Visibility
+Desktop window only
+Good for watching directly
+
+☐☑ (Preview Only):
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+████████████████ 80% Visibility ⭐
+Web screenshots only
+Best balance!
+
+☐☐ (None):
+━━━━
+██ 10% Visibility
+Progress bar only
+Trust mode!
+
+═══════════════════════════════════════════════════════════════
+
+SUMMARY INFOGRAPHIC:
+═══════════════════════════════════════════════════════════════
+
+        Desktop Window?     Web Screenshots?
+        ↓                   ↓
+☑☑  →  ✓ YES              ✓ YES          → Max feedback
+☑☐  →  ✓ YES              ✗ NO           → Watch directly  
+☐☑  →  ✗ NO (headless)    ✓ YES          → Clean + feedback ⭐
+☐☐  →  ✗ NO (headless)    ✗ NO           → Max speed
+
+═══════════════════════════════════════════════════════════════
+
+💡 PRO TIP:
+
+Most users settle on ☐☑ (headless + preview) after trying
+all combinations. It offers:
+• Clean desktop (no browser window)
+• Visual feedback (screenshots)
+• Good performance
+• Professional appearance
+
+Try all four to find your preference!
+
+═══════════════════════════════════════════════════════════════
+
+🎯 QUICK REFERENCE:
+
+Need to see browser? → ☑ first checkbox
+Want clean desktop? → ☐ first checkbox (headless)
+
+Want screenshots? → ☑ second checkbox
+Want max speed? → ☐ second checkbox
+
+═══════════════════════════════════════════════════════════════
+
+That's all the combinations! 🎛️
+
+Choose the perfect setup for your needs! ✨
+
+═══════════════════════════════════════════════════════════════
