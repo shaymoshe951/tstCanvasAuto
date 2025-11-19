@@ -12,6 +12,7 @@ The latest version uses an optimized clipboard-based method to extract URLs, mak
 - **Real-time Progress**: Live progress updates during scanning
 - **Headless Mode Control**: Choose whether to show the browser window or run hidden 🖥️
 - **Browser Preview**: See live screenshots of what's happening (optional toggle!) 📸
+- **Device Mapping Upload**: Upload Excel/CSV with device IDs and S/Ns per suite 📊
 - **Data Export**: Download results as CSV or JSON
 - **Caching**: Automatically caches results to avoid duplicate fetching
 - **Statistics**: View scan counts and group statistics
@@ -79,7 +80,22 @@ Open `canvas-scraper.html` in your web browser:
 - **Option 2**: Right-click → Open With → Your Browser
 - **Option 3**: Drag and drop into browser window
 
-### Step 3: Login and Fetch
+### Step 3: Upload Device Mapping (Optional)
+
+If you want to add device IDs and S/Ns to your scan results:
+
+1. Click "Choose File" under "Upload Device Mapping"
+2. Select your Excel (.xlsx, .xls) or CSV file
+3. The file should have columns: `Device id`, `Suite name`, `Room name`, `Room Type`, `Device S/N`
+4. Wait for the success message confirming upload
+
+Example format:
+| Device id | Suite name | Room name | Room Type | Device S/N |
+|-----------|-----------|-----------|-----------|------------|
+| id_Qjg6RC_07 | Ensuite 07 | Bathroom | VXTBB230 | ... |
+| id_MEMC6C_08 | 08 | Bedroom | VXTBB230 | ... |
+
+### Step 4: Login and Fetch
 
 1. Enter your Canvas.io email and password
 2. **Choose your preferences:**
@@ -91,7 +107,7 @@ Open `canvas-scraper.html` in your web browser:
      - Unchecked: Faster processing without screenshots
 3. Click "Start Fetching"
 4. Watch the progress bar as it collects your scans
-5. View results in the data table
+5. View results in the data table (with Device IDs and S/Ns if uploaded)
 6. Download as CSV or JSON
 
 **Recommended:** ☐☑ (headless + preview) for the best experience!
@@ -210,16 +226,18 @@ tableDict = {
   {
     "account_name": "John Doe",
     "group": "Medical Records",
-    "scan_text": "Lab_Results_2024",
-    "scan_url": "https://canvas.io/view/..."
+    "scan_text": "Ensuite 07 Bathroom",
+    "scan_url": "https://canvas.io/view/...",
+    "device_ids": "id_Qjg6RC_07, id_MEMC6C_07",
+    "device_sns": "VXTBB230_001, VXTBB230_002"
   }
 ]
 ```
 
 ### CSV Output
 ```csv
-Account Name,Group,Scan Text,Scan URL
-John Doe,Medical Records,Lab_Results_2024,https://canvas.io/view/...
+Account Name,Group,Scan Text,Device IDs,Device S/Ns,Scan URL
+John Doe,Medical Records,Ensuite 07 Bathroom,"id_Qjg6RC_07, id_MEMC6C_07","VXTBB230_001, VXTBB230_002",https://canvas.io/view/...
 ```
 
 ## 🔒 Security Notes
