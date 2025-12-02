@@ -1,13 +1,11 @@
 // Canvas.io Scan Fetcher - Backend Server
-// Install dependencies: npm install playwright express cors fs-extra multer xlsx
+// Install dependencies: npm install playwright express cors fs-extra
 
 const express = require('express');
 const cors = require('cors');
 const { chromium } = require('playwright');
 const fs = require('fs-extra');
 const path = require('path');
-const multer = require('multer');
-const XLSX = require('xlsx');
 
 const app = express();
 const PORT = 3000;
@@ -21,17 +19,8 @@ const CANVAS_URL = 'https://canvas.io/account/login'; // Update with actual URL
 app.use(cors());
 app.use(express.json());
 
-// Configure multer for file uploads
-const upload = multer({ 
-    storage: multer.memoryStorage(),
-    limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
-});
-
 // Ensure working folder exists
 fs.ensureDirSync(WORKING_FOLDER);
-
-// Global variable to store device mapping
-let deviceMapping = {};
 
 // Helper function to create valid filename
 function toValidFilename(filename) {
@@ -49,56 +38,6 @@ async function waitForNetworkIdle(page) {
         console.log('Timeout reached, continuing...');
     }
     await page.waitForTimeout(1000);
-}
-
-// Helper function to find matching suite in device mapping
-function findMatchingSuite(scanText) {
-    // Extract potential suite number from scan text
-    // Scan text format examples: "Ensuite 07 Bathroom", "10 Bedroom . Bedroom", "11 Ensuite 11 Bathroom"
-    
-    // Try to find exact match first
-    if (deviceMapping[scanText]) {
-        return deviceMapping[scanText];
-    }
-    
-    // Try to match by suite number patterns
-    const suitePatterns = [
-        /(\d+)\s*Ensuite/i,        // "07 Ensuite", "Ensuite 07"
-        /Ensuite\s*(\d+)/i,
-        /^(\d+)\s+/,                // "10 Bedroom"
-        /Suite\s*(\d+)/i            // "Suite 07"
-    ];
-    
-    for (const pattern of suitePatterns) {
-        const match = scanText.match(pattern);
-        if (match) {
-            const suiteNum = match[1];
-            
-            // Try to find in device mapping with different formats
-            const possibleKeys = [
-                `${suiteNum}`,
-                `Suite ${suiteNum}`,
-                `0${suiteNum}`,
-                suiteNum.padStart(2, '0')
-            ];
-            
-            for (const key of possibleKeys) {
-                if (deviceMapping[key]) {
-                    return deviceMapping[key];
-                }
-            }
-            
-            // Try partial match
-            for (const mappingKey of Object.keys(deviceMapping)) {
-                if (mappingKey.includes(suiteNum)) {
-                    return deviceMapping[mappingKey];
-                }
-            }
-        }
-    }
-    
-    // No match found
-    return { deviceIds: [], deviceSNs: [] };
 }
 
 // Load cached data
@@ -128,81 +67,6 @@ function saveCache(user, password, data) {
 // Health check endpoint
 app.get('/health', (req, res) => {
     res.json({ status: 'ok', message: 'Backend server is running' });
-});
-
-// File upload endpoint for Excel/CSV
-app.post('/upload-devices', upload.single('file'), (req, res) => {
-    try {
-        if (!req.file) {
-            return res.status(400).json({ error: 'No file uploaded' });
-        }
-
-        const buffer = req.file.buffer;
-        const filename = req.file.originalname;
-        
-        let data;
-        
-        // Parse Excel or CSV
-        if (filename.endsWith('.csv')) {
-            // Parse CSV
-            const csvText = buffer.toString('utf8');
-            const workbook = XLSX.read(csvText, { type: 'string' });
-            const sheetName = workbook.SheetNames[0];
-            const sheet = workbook.Sheets[sheetName];
-            data = XLSX.utils.sheet_to_json(sheet);
-        } else if (filename.endsWith('.xlsx') || filename.endsWith('.xls')) {
-            // Parse Excel
-            const workbook = XLSX.read(buffer, { type: 'buffer' });
-            const sheetName = workbook.SheetNames[0];
-            const sheet = workbook.Sheets[sheetName];
-            data = XLSX.utils.sheet_to_json(sheet);
-        } else {
-            return res.status(400).json({ error: 'Unsupported file format. Please upload CSV or Excel file.' });
-        }
-
-        // Process the data to create suite name -> device info mapping
-        // Expected columns: "Device id", "Suite name", "Room name", "Room Type", "Device S/N"
-        deviceMapping = {};
-        
-        data.forEach(row => {
-            const suiteName = row['Suite name'] || row['Suite nam'] || '';
-            const deviceId = row['Device id'] || '';
-            const deviceSN = row['Device S/N'] || '';
-            
-            if (!suiteName) return;
-            
-            // Initialize suite if not exists
-            if (!deviceMapping[suiteName]) {
-                deviceMapping[suiteName] = {
-                    deviceIds: [],
-                    deviceSNs: []
-                };
-            }
-            
-            // Add device ID if present and not duplicate
-            if (deviceId && !deviceMapping[suiteName].deviceIds.includes(deviceId)) {
-                deviceMapping[suiteName].deviceIds.push(deviceId);
-            }
-            
-            // Add device S/N if present and not duplicate
-            if (deviceSN && !deviceMapping[suiteName].deviceSNs.includes(deviceSN)) {
-                deviceMapping[suiteName].deviceSNs.push(deviceSN);
-            }
-        });
-
-        console.log('Device mapping created:', JSON.stringify(deviceMapping, null, 2));
-
-        res.json({ 
-            success: true, 
-            message: `Processed ${data.length} rows, found ${Object.keys(deviceMapping).length} unique suites`,
-            suites: Object.keys(deviceMapping),
-            preview: deviceMapping
-        });
-
-    } catch (error) {
-        console.error('Error processing file:', error);
-        res.status(500).json({ error: 'Error processing file: ' + error.message });
-    }
 });
 
 // Main scraping endpoint with SSE (Server-Sent Events)
@@ -249,9 +113,7 @@ app.get('/fetch-scans', async (req, res) => {
             account_name: [],
             group: [],
             scan_text: [],
-            scan_url: [],
-            device_ids: [],
-            device_sns: []
+            scan_url: []
         };
 
         // Launch browser with clipboard permissions
@@ -385,18 +247,11 @@ app.get('/fetch-scans', async (req, res) => {
                             await sendScreenshot(page, `Scan: ${text}`);
                         }
 
-                        // Find matching device information
-                        const deviceInfo = findMatchingSuite(text);
-                        const deviceIdsStr = deviceInfo.deviceIds.join(', ');
-                        const deviceSNsStr = deviceInfo.deviceSNs.join(', ');
-
                         // Add to data
                         tableDict.account_name.push(accountName);
                         tableDict.group.push(groupText);
                         tableDict.scan_text.push(text);
                         tableDict.scan_url.push(clipboardText);
-                        tableDict.device_ids.push(deviceIdsStr);
-                        tableDict.device_sns.push(deviceSNsStr);
 
                         await waitForNetworkIdle(page);
 
@@ -408,9 +263,7 @@ app.get('/fetch-scans', async (req, res) => {
                             account_name: tableDict.account_name[i],
                             group: tableDict.group[i],
                             scan_text: tableDict.scan_text[i],
-                            scan_url: tableDict.scan_url[i],
-                            device_ids: tableDict.device_ids[i],
-                            device_sns: tableDict.device_sns[i]
+                            scan_url: tableDict.scan_url[i]
                         }));
 
                         sendUpdate('data', { scans });
@@ -433,9 +286,7 @@ app.get('/fetch-scans', async (req, res) => {
             account_name: tableDict.account_name[i],
             group: tableDict.group[i],
             scan_text: tableDict.scan_text[i],
-            scan_url: tableDict.scan_url[i],
-            device_ids: tableDict.device_ids[i],
-            device_sns: tableDict.device_sns[i]
+            scan_url: tableDict.scan_url[i]
         }));
         
         sendUpdate('data', { scans: finalScans });

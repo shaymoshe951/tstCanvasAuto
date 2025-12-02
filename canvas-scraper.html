@@ -302,14 +302,6 @@
             <div class="section" id="loginSection">
                 <h2>Login to Canvas.io</h2>
                 
-                <!-- Device Upload Section -->
-                <div class="form-group" style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
-                    <label for="deviceFile" style="font-size: 1.1em;">📁 Upload Device Mapping (Optional)</label>
-                    <p style="color: #666; font-size: 0.9em; margin-bottom: 10px;">Upload an Excel or CSV file with device IDs and S/Ns per suite</p>
-                    <input type="file" id="deviceFile" accept=".csv,.xlsx,.xls" style="padding: 10px; border: 2px dashed #667eea; border-radius: 8px; width: 100%; background: white; cursor: pointer;">
-                    <div id="uploadStatus" style="margin-top: 10px; display: none;"></div>
-                </div>
-
                 <form id="loginForm">
                     <div class="form-group">
                         <label for="email">Email</label>
@@ -385,8 +377,6 @@
                                 <th>Account Name</th>
                                 <th>Group</th>
                                 <th>Scan Text</th>
-                                <th>Device IDs</th>
-                                <th>Device S/Ns</th>
                                 <th>Scan URL</th>
                             </tr>
                         </thead>
@@ -422,8 +412,6 @@
         const browserPreview = document.getElementById('browserPreview');
         const browserScreenshot = document.getElementById('browserScreenshot');
         const screenshotCaption = document.getElementById('screenshotCaption');
-        const deviceFile = document.getElementById('deviceFile');
-        const uploadStatus = document.getElementById('uploadStatus');
 
         // Show status message
         function showStatus(message, type = 'info') {
@@ -455,8 +443,6 @@
                     <td>${scan.account_name}</td>
                     <td>${scan.group}</td>
                     <td>${scan.scan_text}</td>
-                    <td>${scan.device_ids || ''}</td>
-                    <td>${scan.device_sns || ''}</td>
                     <td><a href="${scan.scan_url}" target="_blank">View Scan</a></td>
                 `;
                 tableBody.appendChild(row);
@@ -468,11 +454,11 @@
 
         // Download CSV
         function downloadCsv() {
-            const headers = ['Account Name', 'Group', 'Scan Text', 'Device IDs', 'Device S/Ns', 'Scan URL'];
+            const headers = ['Account Name', 'Group', 'Scan Text', 'Scan URL'];
             const csvContent = [
                 headers.join(','),
                 ...scansData.map(scan => 
-                    [scan.account_name, scan.group, scan.scan_text, scan.device_ids || '', scan.device_sns || '', scan.scan_url]
+                    [scan.account_name, scan.group, scan.scan_text, scan.scan_url]
                         .map(field => `"${field}"`)
                         .join(',')
                 )
@@ -502,37 +488,6 @@
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
         }
-
-        // Handle file upload
-        deviceFile.addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            uploadStatus.style.display = 'block';
-            uploadStatus.innerHTML = '<span style="color: #667eea;">⏳ Uploading and processing file...</span>';
-
-            try {
-                const formData = new FormData();
-                formData.append('file', file);
-
-                const response = await fetch(`${BACKEND_URL}/upload-devices`, {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const result = await response.json();
-
-                if (response.ok) {
-                    uploadStatus.innerHTML = `<span style="color: #2e7d32;">✅ ${result.message}</span>`;
-                    console.log('Device mapping uploaded:', result.preview);
-                } else {
-                    uploadStatus.innerHTML = `<span style="color: #c62828;">❌ Error: ${result.error}</span>`;
-                }
-            } catch (error) {
-                uploadStatus.innerHTML = `<span style="color: #c62828;">❌ Error uploading file: ${error.message}</span>`;
-                console.error('Upload error:', error);
-            }
-        });
 
         // Handle form submission
         loginForm.addEventListener('submit', async (e) => {
