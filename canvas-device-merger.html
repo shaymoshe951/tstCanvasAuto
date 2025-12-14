@@ -969,6 +969,7 @@
             
             const arrangedData = [];
             const processedDevices = new Set(); // Track which devices we've already added
+            const matchedSuites = new Set(); // Track which suites from device mapping were matched
             
             // Process each merged scan
             mergedData.forEach(scan => {
@@ -1023,6 +1024,11 @@
                         
                         const deviceDetails = deviceDetailsMapping[deviceId] || {};
                         
+                        // Mark this suite as matched
+                        if (deviceDetails.suiteName) {
+                            matchedSuites.add(deviceDetails.suiteName);
+                        }
+                        
                         // Use the resolved room data if available
                         const roomData = conflictResolutions && conflictResolutions[deviceId] 
                             ? conflictResolutions[deviceId] 
@@ -1054,6 +1060,56 @@
                     });
                 }
             });
+            
+            // Add unmatched devices from device mapping file
+            // Find suites in device mapping that weren't matched to any scan
+            const unmatchedSuites = Object.keys(deviceMapping).filter(suiteName => !matchedSuites.has(suiteName));
+            
+            if (unmatchedSuites.length > 0) {
+                console.log(`📋 Adding ${unmatchedSuites.length} unmatched suites with "Not Found" status`);
+                
+                unmatchedSuites.forEach(suiteName => {
+                    const deviceInfo = deviceMapping[suiteName];
+                    
+                    // Add each device from the unmatched suite
+                    deviceInfo.deviceIds.forEach(deviceId => {
+                        // Skip if already processed (shouldn't happen, but safety check)
+                        if (processedDevices.has(deviceId)) {
+                            return;
+                        }
+                        
+                        processedDevices.add(deviceId);
+                        
+                        const deviceDetails = deviceDetailsMapping[deviceId] || {};
+                        
+                        arrangedData.push({
+                            Deviceid: deviceId,
+                            Cloud: 'azure_production',
+                            Customer: customerName,
+                            Facility: facilityName,
+                            Room_number: suiteName,
+                            Room_Type: deviceDetails.roomType || '',
+                            Room_Pictures: 'Not Found',
+                            Room_Comments: deviceDetails.roomName || '',
+                            Excluded_: 'FALSE',
+                            DATE: '',
+                            Device_Model: '',
+                            state: '',
+                            software_version: '',
+                            familyData: '',
+                            UploadedMa: '',
+                            mode: '',
+                            lastLearningDate: '',
+                            lastMapUpdate: '',
+                            is_skeleton: '',
+                            to: '',
+                            falling_sensitivity: ''
+                        });
+                    });
+                });
+                
+                console.log(`✅ Added ${unmatchedSuites.length} unmatched suites to the end of the file`);
+            }
             
             // Create CSV with all columns
             const headers = [
