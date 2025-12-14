@@ -1113,11 +1113,27 @@
             
             // Create CSV with all columns
             const headers = [
-                'Deviceid', 'Cloud', 'Customer', 'Facility', 'Room_number', 'Room_Type',
-                'Room_Pictures', 'Room_Comments', 'Excluded_', 'DATE', 'Device_Model',
-                'state', 'software_version', 'familyData', 'UploadedMa', 'mode',
-                'lastLearningDate', 'lastMapUpdate', 'is_skeleton', 'to', 'falling_sensitivity'
-            ];
+                    "DeviceId",
+                    "Cloud",
+                    "Customer",
+                    "Facility",
+                    "Room_number",
+                    "Room_Type",
+                    "Room_Pictures",
+                    "Room_Comments",
+                    "Excluded_device",
+                    "DATE",
+                    "Device_Mounting",
+                    "state",
+                    "software_version",
+                    "famDataDate",
+                    "uploadMap",
+                    "mode",
+                    "lastLearningDate",
+                    "lastMapUpdate",
+                    "is_skeleton",
+                    "falling_sensitivity",
+                ];
             
             const csvContent = [
                 headers.join(','),
