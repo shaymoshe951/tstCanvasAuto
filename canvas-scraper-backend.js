@@ -242,6 +242,14 @@ app.get('/fetch-scans', async (req, res) => {
 
                         console.log(`${groupText} =====> ${text} =====> ${clipboardText}`);
                         
+                        // Validate clipboard contains canvas.io URL
+                        if (!clipboardText || !clipboardText.toLowerCase().includes('canvas.io')) {
+                            const errorMsg = `Invalid URL copied for "${text}". Expected canvas.io link but got: "${clipboardText}"`;
+                            console.error(errorMsg);
+                            sendUpdate('error', { message: errorMsg });
+                            throw new Error(errorMsg);
+                        }
+                        
                         // Take screenshot of the scan (if enabled)
                         if (enableScreenshots) {
                             await sendScreenshot(page, `Scan: ${text}`);
