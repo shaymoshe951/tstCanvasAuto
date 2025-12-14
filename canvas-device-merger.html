@@ -982,26 +982,25 @@
                 if (deviceIds.length === 0) {
                     // No devices matched, create a row with empty device info
                     arrangedData.push({
-                        Deviceid: '',
+                        DeviceId: '',
                         Cloud: '',
                         Customer: customerName,
                         Facility: facilityName,
                         Room_number: extractRoomNumber(scanText),
-                        Room_Type: '',
+                        Room_Type: 'undefined',
                         Room_Pictures: scan.scan_url,
                         Room_Comments: '',
-                        Excluded_: 'FALSE',
+                        Excluded_device: 'FALSE',
                         DATE: '',
-                        Device_Model: '',
+                        Device_Mounting: '',
                         state: '',
                         software_version: '',
-                        familyData: '',
-                        UploadedMa: '',
+                        famDataDate: '',
+                        uploadMap: '',
                         mode: '',
                         lastLearningDate: '',
                         lastMapUpdate: '',
                         is_skeleton: '',
-                        to: '',
                         falling_sensitivity: ''
                     });
                 } else {
@@ -1035,26 +1034,25 @@
                             : { scanText, roomNumber: extractRoomNumber(scanText), scanUrl: scan.scan_url };
                         
                         arrangedData.push({
-                            Deviceid: deviceId,
+                            DeviceId: deviceId,
                             Cloud: 'azure_production',
                             Customer: customerName,
                             Facility: facilityName,
                             Room_number: roomData.roomNumber,
-                            Room_Type: deviceDetails.roomType || '',
+                            Room_Type: normalizeRoomType(deviceDetails.roomType),
                             Room_Pictures: roomData.scanUrl,
                             Room_Comments: deviceDetails.roomName || '',
-                            Excluded_: 'FALSE',
+                            Excluded_device: 'FALSE',
                             DATE: '',
-                            Device_Model: '',
+                            Device_Mounting: '',
                             state: '',
                             software_version: '',
-                            familyData: '',
-                            UploadedMa: '',
+                            famDataDate: '',
+                            uploadMap: '',
                             mode: '',
                             lastLearningDate: '',
                             lastMapUpdate: '',
                             is_skeleton: '',
-                            to: '',
                             falling_sensitivity: ''
                         });
                     });
@@ -1083,26 +1081,25 @@
                         const deviceDetails = deviceDetailsMapping[deviceId] || {};
                         
                         arrangedData.push({
-                            Deviceid: deviceId,
+                            DeviceId: deviceId,
                             Cloud: 'azure_production',
                             Customer: customerName,
                             Facility: facilityName,
                             Room_number: suiteName,
-                            Room_Type: deviceDetails.roomType || '',
+                            Room_Type: normalizeRoomType(deviceDetails.roomType),
                             Room_Pictures: 'Not Found',
                             Room_Comments: deviceDetails.roomName || '',
-                            Excluded_: 'FALSE',
+                            Excluded_device: 'FALSE',
                             DATE: '',
-                            Device_Model: '',
+                            Device_Mounting: '',
                             state: '',
                             software_version: '',
-                            familyData: '',
-                            UploadedMa: '',
+                            famDataDate: '',
+                            uploadMap: '',
                             mode: '',
                             lastLearningDate: '',
                             lastMapUpdate: '',
                             is_skeleton: '',
-                            to: '',
                             falling_sensitivity: ''
                         });
                     });
@@ -1174,6 +1171,78 @@
             }
             
             return scanText; // Return full text if no pattern matched
+        }
+
+        // Normalize and match room type to predefined list
+        function normalizeRoomType(rawRoomType) {
+            if (!rawRoomType) return 'undefined';
+            
+            // Valid room types (exact format to use in output)
+            const validRoomTypes = [
+                "Bathroom",
+                "Bedroom",
+                "Dining Room",
+                "Family Room",
+                "Hallway",
+                "In Bed",
+                "Kitchen",
+                "Living Room",
+                "Other",
+                "undefined"
+            ];
+            
+            // Normalize the input: lowercase, remove spaces, underscores, hyphens
+            const normalizedInput = rawRoomType
+                .toLowerCase()
+                .replace(/[\s_-]/g, '');
+            
+            // Try to find exact match
+            for (const validType of validRoomTypes) {
+                const normalizedValid = validType
+                    .toLowerCase()
+                    .replace(/[\s_-]/g, '');
+                
+                if (normalizedInput === normalizedValid) {
+                    return validType;
+                }
+            }
+            
+            // Try partial/fuzzy matching
+            // Check if input contains any of the valid types
+            for (const validType of validRoomTypes) {
+                const normalizedValid = validType
+                    .toLowerCase()
+                    .replace(/[\s_-]/g, '');
+                
+                // Check if input contains the valid type or vice versa
+                if (normalizedInput.includes(normalizedValid) || normalizedValid.includes(normalizedInput)) {
+                    return validType;
+                }
+            }
+            
+            // Special cases for common variations
+            const specialCases = {
+                'bath': 'Bathroom',
+                'bed': 'Bedroom',
+                'dining': 'Dining Room',
+                'family': 'Family Room',
+                'hall': 'Hallway',
+                'inbed': 'In Bed',
+                'kitchen': 'Kitchen',
+                'living': 'Living Room',
+                'lounge': 'Living Room',
+                'ensuite': 'Bathroom'
+            };
+            
+            for (const [key, value] of Object.entries(specialCases)) {
+                if (normalizedInput.includes(key)) {
+                    return value;
+                }
+            }
+            
+            // If no match found, return "Other"
+            console.log(`⚠️ Room type "${rawRoomType}" doesn't match any valid type, using "Other"`);
+            return 'Other';
         }
 
         // Event listeners
