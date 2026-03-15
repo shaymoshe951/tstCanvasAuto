@@ -315,18 +315,6 @@
                         <label for="daysBack">Fetch projects updated in the last N days (leave empty for all)</label>
                         <input type="number" id="daysBack" placeholder="e.g. 14" min="1" value="14" style="width: 100px;">
                     </div>
-                    <div class="form-group">
-                        <label style="display: flex; align-items: center; cursor: pointer;">
-                            <input type="checkbox" id="showBrowser" checked style="margin-right: 10px; width: 20px; height: 20px; cursor: pointer;">
-                            <span>Show browser window (uncheck for headless mode)</span>
-                        </label>
-                    </div>
-                    <div class="form-group">
-                        <label style="display: flex; align-items: center; cursor: pointer;">
-                            <input type="checkbox" id="showBrowserPreview" checked style="margin-right: 10px; width: 20px; height: 20px; cursor: pointer;">
-                            <span>Show browser preview (live screenshots)</span>
-                        </label>
-                    </div>
                     <button type="submit" class="btn" id="loginBtn">
                         Start Fetching <span id="loadingSpinner" style="display: none;" class="loading-spinner"></span>
                     </button>
@@ -501,8 +489,6 @@
             
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-            const showBrowser = document.getElementById('showBrowser').checked;
-            const showBrowserPreview = document.getElementById('showBrowserPreview').checked;
             const daysBack = document.getElementById('daysBack').value.trim();
 
             // Disable form
@@ -516,7 +502,7 @@
                 // Create EventSource for SSE (Server-Sent Events)
                 const daysParam = daysBack ? `&days=${encodeURIComponent(daysBack)}` : '';
                 const eventSource = new EventSource(
-                    `${BACKEND_URL}/fetch-scans?email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}&headless=${!showBrowser}&screenshots=${showBrowserPreview}${daysParam}`
+                    `${BACKEND_URL}/fetch-scans?email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}${daysParam}`
                 );
 
                 eventSource.onmessage = (event) => {
@@ -525,13 +511,6 @@
                     if (data.type === 'progress') {
                         updateProgress(data.progress);
                         showStatus(data.message, 'info');
-                    } else if (data.type === 'screenshot') {
-                        // Display browser screenshot (only if enabled)
-                        if (showBrowserPreview) {
-                            browserPreview.style.display = 'block';
-                            browserScreenshot.src = `data:image/png;base64,${data.screenshot}`;
-                            screenshotCaption.textContent = data.caption || 'Browser activity';
-                        }
                     } else if (data.type === 'data') {
                         scansData = data.scans;
                         renderTable();
