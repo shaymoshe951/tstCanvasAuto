@@ -1,0 +1,5 @@
+node_modules/
+canvas_data/
+main_dump.html
+project_page.html
+*.txt

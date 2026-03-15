@@ -8,7 +8,7 @@ const fs = require('fs-extra');
 const path = require('path');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // Configuration
 const WORKING_FOLDER = path.join(__dirname, 'canvas_data');
@@ -33,6 +33,11 @@ async function waitForNetworkIdle(page) {
     await page.waitForTimeout(1000);
 }
 
+
+// Serve frontend
+app.get('/', (_req, res) => {
+    res.sendFile(path.join(__dirname, 'canvas-scraper.html'));
+});
 
 // Health check endpoint
 app.get('/health', (req, res) => {
