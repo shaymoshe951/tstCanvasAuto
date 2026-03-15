@@ -305,11 +305,15 @@
                 <form id="loginForm">
                     <div class="form-group">
                         <label for="email">Email</label>
-                        <input type="email" id="email" placeholder="Enter your email" required>
+                        <input type="email" id="email" placeholder="Enter your email" value="vayyar@vayyar.com" required>
                     </div>
                     <div class="form-group">
                         <label for="password">Password</label>
                         <input type="password" id="password" placeholder="Enter your password" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="daysBack">Fetch projects updated in the last N days (leave empty for all)</label>
+                        <input type="number" id="daysBack" placeholder="e.g. 14" min="1" value="14" style="width: 100px;">
                     </div>
                     <div class="form-group">
                         <label style="display: flex; align-items: center; cursor: pointer;">
@@ -497,18 +501,20 @@
             const password = document.getElementById('password').value;
             const showBrowser = document.getElementById('showBrowser').checked;
             const showBrowserPreview = document.getElementById('showBrowserPreview').checked;
+            const daysBack = document.getElementById('daysBack').value.trim();
 
             // Disable form
             loginBtn.disabled = true;
             loadingSpinner.style.display = 'inline-block';
             progressContainer.style.display = 'block';
             updateProgress(0);
-            showStatus('Connecting to Canvas.io...', 'info');
+            showStatus('Connecting to Twindo...', 'info');
 
             try {
                 // Create EventSource for SSE (Server-Sent Events)
+                const daysParam = daysBack ? `&days=${encodeURIComponent(daysBack)}` : '';
                 const eventSource = new EventSource(
-                    `${BACKEND_URL}/fetch-scans?email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}&headless=${!showBrowser}&screenshots=${showBrowserPreview}`
+                    `${BACKEND_URL}/fetch-scans?email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}&headless=${!showBrowser}&screenshots=${showBrowserPreview}${daysParam}`
                 );
 
                 eventSource.onmessage = (event) => {
