@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Canvas & Device Data Merger</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -311,7 +311,7 @@
             <div class="info-box">
                 <h4>📋 How it works:</h4>
                 <p>
-                    1. Enter Customer and Facility information below<br>
+                    1. Enter Customer and Facility information, and select Region (US & WW or EU & UK)<br>
                     2. Upload your Canvas scan data (CSV/Excel) with columns: Account Name, Group, Scan Text, Scan URL<br>
                     3. Upload your device mapping (CSV/Excel) with columns: Device id, Suite name, Room name, Room Type, Device S/N<br>
                     4. The system will intelligently match suite names and merge the data<br>
@@ -319,7 +319,7 @@
                 </p>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 30px;">
                 <div class="form-group">
                     <label for="customerInput" style="display: block; margin-bottom: 8px; color: #555; font-weight: 600;">
                         Customer Name
@@ -333,6 +333,23 @@
                     </label>
                     <input type="text" id="facilityInput" placeholder="e.g., Stowford House" 
                            style="width: 100%; padding: 12px 16px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 16px;">
+                </div>
+                <div class="form-group">
+                    <label style="display: block; margin-bottom: 8px; color: #555; font-weight: 600;">
+                        Region
+                    </label>
+                    <div style="display: flex; gap: 15px; align-items: center; padding: 12px 0;">
+                        <label style="display: flex; align-items: center; cursor: pointer; font-weight: normal;">
+                            <input type="radio" id="regionUS" name="region" value="production" checked 
+                                   style="width: 18px; height: 18px; margin-right: 8px; cursor: pointer;">
+                            <span>US & WW</span>
+                        </label>
+                        <label style="display: flex; align-items: center; cursor: pointer; font-weight: normal;">
+                            <input type="radio" id="regionEU" name="region" value="azure_production" 
+                                   style="width: 18px; height: 18px; margin-right: 8px; cursor: pointer;">
+                            <span>EU & UK</span>
+                        </label>
+                    </div>
                 </div>
             </div>
 
@@ -583,6 +600,9 @@
         // Find matching suite in device mapping
         function findMatchingSuite(scanText) {
             if (!scanText) return { deviceIds: [], deviceSNs: [] };
+            
+            // Convert to string if it's not already
+            scanText = String(scanText);
 
             // Try exact match first
             if (deviceMapping[scanText]) {
@@ -636,6 +656,9 @@
         function extractRoomIdentifier(scanText) {
             if (!scanText) return null;
             
+            // Convert to string if it's not already (handle numbers, etc.)
+            scanText = String(scanText);
+            
             // Remove everything from '(' that contains 'rescan' onwards
             // This handles: "Room 12 (Rescan after sensor move)"
             let baseText = scanText.replace(/\s*\([^)]*rescan[^)]*\)/gi, '').trim();
@@ -667,6 +690,8 @@
 
         // Check if scan is marked as rescan
         function isRescan(scanText) {
+            if (!scanText) return false;
+            scanText = String(scanText);
             return /rescan/i.test(scanText);
         }
 
@@ -946,6 +971,7 @@
             // Get user input values
             const customerName = document.getElementById('customerInput').value.trim();
             const facilityName = document.getElementById('facilityInput').value.trim();
+            const cloudRegion = document.querySelector('input[name="region"]:checked').value;
             
             // Validate input
             if (!customerName || !facilityName) {
@@ -983,7 +1009,7 @@
                     // No devices matched, create a row with empty device info
                     arrangedData.push({
                         DeviceId: '',
-                        Cloud: '',
+                        Cloud: cloudRegion,
                         Customer: customerName,
                         Facility: facilityName,
                         Room_number: extractRoomNumber(scanText),
@@ -1035,7 +1061,7 @@
                         
                         arrangedData.push({
                             DeviceId: deviceId,
-                            Cloud: 'azure_production',
+                            Cloud: cloudRegion,
                             Customer: customerName,
                             Facility: facilityName,
                             Room_number: roomData.roomNumber,
@@ -1082,7 +1108,7 @@
                         
                         arrangedData.push({
                             DeviceId: deviceId,
-                            Cloud: 'azure_production',
+                            Cloud: cloudRegion,
                             Customer: customerName,
                             Facility: facilityName,
                             Room_number: suiteName,
@@ -1154,6 +1180,9 @@
         function extractRoomNumber(scanText) {
             if (!scanText) return '';
             
+            // Convert to string if it's not already
+            scanText = String(scanText);
+            
             // Try to extract just the number
             const patterns = [
                 /Room\s*(\d+)/i,
@@ -1176,6 +1205,9 @@
         // Normalize and match room type to predefined list
         function normalizeRoomType(rawRoomType) {
             if (!rawRoomType) return 'undefined';
+            
+            // Convert to string if it's not already
+            rawRoomType = String(rawRoomType);
             
             // Valid room types (exact format to use in output)
             const validRoomTypes = [
