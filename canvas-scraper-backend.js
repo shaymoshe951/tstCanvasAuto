@@ -191,7 +191,7 @@ app.get('/fetch-scans', async (req, res) => {
     }
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`\n=================================`);
     console.log(`Twindo Scan Fetcher Backend`);
     console.log(`=================================`);
