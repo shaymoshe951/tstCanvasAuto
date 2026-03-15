@@ -75,6 +75,10 @@ app.get('/', (_req, res) => {
     res.sendFile(path.join(__dirname, 'canvas-scraper.html'));
 });
 
+app.get('/merger', (_req, res) => {
+    res.sendFile(path.join(__dirname, 'canvas-device-merger.html'));
+});
+
 app.get('/health', (_req, res) => {
     res.json({ status: 'ok', message: 'Backend server is running' });
 });
