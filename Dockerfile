@@ -9,6 +9,4 @@ COPY canvas-scraper-backend.js ./
 COPY canvas-scraper.html ./
 COPY canvas-device-merger.html ./
 
-EXPOSE 3000
-
 CMD ["node", "canvas-scraper-backend.js"]
