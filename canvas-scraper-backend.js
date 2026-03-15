@@ -1,6 +1,8 @@
 // Twindo Scan Fetcher - Backend Server
 // Uses Twindo REST API directly - no browser needed
 
+console.log('Starting canvas-scraper-backend.js, __dirname:', __dirname);
+
 const express = require('express');
 const cors = require('cors');
 const https = require('https');
@@ -12,11 +14,12 @@ const PORT = process.env.PORT || 3000;
 
 const API_BASE = 'https://api.twindo.com/v3';
 
-// Read HTML files at startup — crashes immediately if files are missing (easier to debug)
-const SCRAPER_HTML = fs.readFileSync(path.join(__dirname, 'canvas-scraper.html'), 'utf8');
-const MERGER_HTML  = fs.readFileSync(path.join(__dirname, 'canvas-device-merger.html'), 'utf8');
-
-console.log(`HTML files loaded. Scraper: ${SCRAPER_HTML.length} chars, Merger: ${MERGER_HTML.length} chars`);
+// Log all files in __dirname to debug Nixpacks file layout
+try {
+    console.log('Files in __dirname:', fs.readdirSync(__dirname).join(', '));
+} catch (e) {
+    console.log('Could not list __dirname:', e.message);
+}
 
 app.use(cors());
 app.use(express.json());
@@ -78,8 +81,12 @@ async function fetchAllPages(firstUrl, token) {
 
 // --- Routes ---
 
-app.get('/', (_req, res) => res.type('html').send(SCRAPER_HTML));
-app.get('/merger', (_req, res) => res.type('html').send(MERGER_HTML));
+app.get('/', (_req, res) => res.sendFile(path.join(__dirname, 'canvas-scraper.html'), err => {
+    if (err) res.status(500).send('Error loading page: ' + err.message + ' | __dirname: ' + __dirname);
+}));
+app.get('/merger', (_req, res) => res.sendFile(path.join(__dirname, 'canvas-device-merger.html'), err => {
+    if (err) res.status(500).send('Error loading page: ' + err.message + ' | __dirname: ' + __dirname);
+}));
 
 app.get('/health', (_req, res) => {
     res.json({ status: 'ok', message: 'Backend server is running' });
