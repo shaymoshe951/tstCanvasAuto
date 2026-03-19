@@ -344,6 +344,12 @@
                         <label for="daysBack">Fetch projects updated in the last N days (leave empty for all)</label>
                         <input type="number" id="daysBack" placeholder="e.g. 14" min="1" value="14" style="width: 100px;">
                     </div>
+                    <div class="form-group">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" id="includeMesh" style="width: 18px; height: 18px; cursor: pointer;">
+                            Include 3D mesh download links (slower — fetches one extra API call per scan)
+                        </label>
+                    </div>
                     <button type="submit" class="btn" id="loginBtn">
                         Start Fetching <span id="loadingSpinner" style="display: none;" class="loading-spinner"></span>
                     </button>
@@ -399,6 +405,7 @@
                                 <th>Group</th>
                                 <th>Scan Text</th>
                                 <th>Scan URL</th>
+                                <th id="meshHeader" style="display:none;">Mesh Download</th>
                             </tr>
                         </thead>
                         <tbody id="tableBody">
@@ -459,14 +466,20 @@
 
         // Render table
         function renderTable() {
+            const hasMesh = scansData.length > 0 && 'mesh_url' in scansData[0];
+            document.getElementById('meshHeader').style.display = hasMesh ? '' : 'none';
             tableBody.innerHTML = '';
-            scansData.forEach((scan, index) => {
+            scansData.forEach((scan) => {
                 const row = document.createElement('tr');
+                const meshCell = hasMesh
+                    ? `<td>${scan.mesh_url ? `<a href="${scan.mesh_url}" target="_blank">Download Mesh</a>` : '—'}</td>`
+                    : '';
                 row.innerHTML = `
                     <td>${scan.account_name}</td>
                     <td>${scan.group}</td>
                     <td>${scan.scan_text}</td>
                     <td><a href="${scan.scan_url}" target="_blank">View Scan</a></td>
+                    ${meshCell}
                 `;
                 tableBody.appendChild(row);
             });
@@ -477,14 +490,15 @@
 
         // Download CSV
         function downloadCsv() {
-            const headers = ['Account Name', 'Group', 'Scan Text', 'Scan URL'];
+            const hasMesh = scansData.length > 0 && 'mesh_url' in scansData[0];
+            const headers = ['Account Name', 'Group', 'Scan Text', 'Scan URL', ...(hasMesh ? ['Mesh Download URL'] : [])];
             const csvContent = [
                 headers.join(','),
-                ...scansData.map(scan => 
-                    [scan.account_name, scan.group, scan.scan_text, scan.scan_url]
-                        .map(field => `"${field}"`)
-                        .join(',')
-                )
+                ...scansData.map(scan => {
+                    const fields = [scan.account_name, scan.group, scan.scan_text, scan.scan_url];
+                    if (hasMesh) fields.push(scan.mesh_url || '');
+                    return fields.map(field => `"${field}"`).join(',');
+                })
             ].join('\n');
 
             const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -530,8 +544,9 @@
             try {
                 // Create EventSource for SSE (Server-Sent Events)
                 const daysParam = daysBack ? `&days=${encodeURIComponent(daysBack)}` : '';
+                const meshParam = document.getElementById('includeMesh').checked ? '&includeMesh=true' : '';
                 const eventSource = new EventSource(
-                    `${BACKEND_URL}/fetch-scans?email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}${daysParam}`
+                    `${BACKEND_URL}/fetch-scans?email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}${daysParam}${meshParam}`
                 );
 
                 eventSource.onmessage = (event) => {

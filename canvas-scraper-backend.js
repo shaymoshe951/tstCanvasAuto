@@ -67,6 +67,49 @@ function apiGet(url, token) {
     });
 }
 
+// Follow a single redirect (302/301) and return the Location URL
+function followRedirect(url, token) {
+    return new Promise((resolve) => {
+        const u = new URL(url);
+        const req = https.request({
+            hostname: u.hostname,
+            path: u.pathname + (u.search || ''),
+            headers: { 'Authorization': 'JWT ' + token }
+        }, res => {
+            res.resume();
+            if (res.statusCode === 301 || res.statusCode === 302) {
+                resolve(res.headers.location || null);
+            } else {
+                resolve(null);
+            }
+        });
+        req.on('error', () => resolve(null));
+        req.end();
+    });
+}
+
+// Get the S3 mesh download URL for a scan group (returns null if unavailable)
+async function getMeshUrl(scanUuid, token) {
+    try {
+        const detail = await apiGet(`https://api.twindo.com/v3/scangroups/${scanUuid}/`, token);
+        const assets = detail.assets || [];
+
+        // Fetch all asset details in parallel
+        const assetDetails = await Promise.all(
+            assets.map(id => apiGet(`https://api.twindo.com/v3/assets/${id}/`, token).catch(() => null))
+        );
+
+        // Prefer reprocessed mesh, fall back to odp_mesh
+        const mesh = assetDetails.find(a => a && a.type === 'mesh')
+                  || assetDetails.find(a => a && a.type === 'odp_mesh');
+
+        if (!mesh || !mesh.download_url) return null;
+        return await followRedirect(mesh.download_url, token);
+    } catch {
+        return null;
+    }
+}
+
 // Fetch all pages of a paginated endpoint
 async function fetchAllPages(firstUrl, token) {
     const results = [];
@@ -94,8 +137,9 @@ app.get('/health', (_req, res) => {
 
 // Main endpoint with SSE
 app.get('/fetch-scans', async (req, res) => {
-    const { email, password, days } = req.query;
+    const { email, password, days, includeMesh } = req.query;
     const daysBack = days ? parseInt(days, 10) : null;
+    const fetchMesh = includeMesh === 'true';
 
     if (!email || !password) {
         return res.status(400).json({ error: 'Email and password are required' });
@@ -167,11 +211,13 @@ app.get('/fetch-scans', async (req, res) => {
             console.log(`  ${scanGroups.length} scans`);
 
             for (const scan of scanGroups) {
+                const mesh_url = fetchMesh ? await getMeshUrl(scan.uuid, token) : null;
                 allScans.push({
                     account_name: email,
                     group: project.name,
                     scan_text: scan.name,
-                    scan_url: scan.sharing_url || `https://api.twindo.com/viewer/obtain/scangroup/${scan.id}?redirect=1`
+                    scan_url: scan.sharing_url || `https://api.twindo.com/viewer/obtain/scangroup/${scan.id}?redirect=1`,
+                    ...(fetchMesh && { mesh_url: mesh_url || '' })
                 });
             }
 
