@@ -25,7 +25,7 @@ try {
 }
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
 
 // --- API helpers ---
 
@@ -268,7 +268,7 @@ function downloadBuffer(url) {
 }
 
 // POST /start-mesh-download — starts async job, returns jobId immediately
-app.post('/start-mesh-download', express.json(), (req, res) => {
+app.post('/start-mesh-download', (req, res) => {
     const scans = (req.body.scans || []).filter(s => s.mesh_url);
     if (!scans.length) return res.status(400).json({ error: 'No mesh URLs found in scan data' });
 
