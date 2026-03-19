@@ -395,6 +395,18 @@
                     <button class="btn btn-secondary" id="downloadJsonBtn" style="display: none;">
                         📥 Download JSON
                     </button>
+                    <button class="btn btn-secondary" id="downloadMeshesBtn" style="display: none; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                        📦 Download All Meshes
+                    </button>
+                </div>
+
+                <!-- Mesh download progress -->
+                <div id="meshProgressSection" style="display:none; margin-top: 20px;">
+                    <h3 style="margin-bottom: 10px; color: #333;">Mesh Download Progress</h3>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="meshProgressFill" style="background: linear-gradient(90deg, #f093fb 0%, #f5576c 100%);">0%</div>
+                    </div>
+                    <div class="status-message info" id="meshStatusMsg" style="display:block; margin-top: 8px;"></div>
                 </div>
 
                 <div class="table-container" id="tableContainer" style="display: none;">
@@ -436,6 +448,7 @@
         const tableBody = document.getElementById('tableBody');
         const downloadCsvBtn = document.getElementById('downloadCsvBtn');
         const downloadJsonBtn = document.getElementById('downloadJsonBtn');
+        const downloadMeshesBtn = document.getElementById('downloadMeshesBtn');
         const statsContainer = document.getElementById('statsContainer');
         const totalScans = document.getElementById('totalScans');
         const totalGroups = document.getElementById('totalGroups');
@@ -486,6 +499,7 @@
             tableContainer.style.display = scansData.length > 0 ? 'block' : 'none';
             downloadCsvBtn.style.display = scansData.length > 0 ? 'block' : 'none';
             downloadJsonBtn.style.display = scansData.length > 0 ? 'block' : 'none';
+            updateMeshBtn();
         }
 
         // Download CSV
@@ -590,9 +604,68 @@
             }
         });
 
+        // Show/hide Download All Meshes button
+        function updateMeshBtn() {
+            const hasMesh = scansData.length > 0 && scansData.some(s => s.mesh_url);
+            downloadMeshesBtn.style.display = hasMesh ? 'block' : 'none';
+        }
+
+        // Mesh bulk download
+        async function downloadAllMeshes() {
+            const meshScans = scansData.filter(s => s.mesh_url);
+            if (!meshScans.length) return;
+
+            downloadMeshesBtn.disabled = true;
+            const progressSection = document.getElementById('meshProgressSection');
+            const progressFill = document.getElementById('meshProgressFill');
+            const statusMsg = document.getElementById('meshStatusMsg');
+
+            progressSection.style.display = 'block';
+            progressFill.style.width = '0%';
+            progressFill.textContent = '0%';
+            statusMsg.textContent = 'Starting mesh download...';
+
+            try {
+                // Start job
+                const startRes = await fetch(`${BACKEND_URL}/start-mesh-download`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ scans: scansData })
+                });
+                const { jobId, error } = await startRes.json();
+                if (error) throw new Error(error);
+
+                // Stream progress
+                await new Promise((resolve, reject) => {
+                    const es = new EventSource(`${BACKEND_URL}/mesh-progress/${jobId}`);
+                    es.onmessage = (e) => {
+                        const data = JSON.parse(e.data);
+                        progressFill.style.width = `${data.progress}%`;
+                        progressFill.textContent = `${data.progress}%`;
+                        statusMsg.textContent = data.message;
+                        if (data.status === 'done') { es.close(); resolve(); }
+                        if (data.status === 'error') { es.close(); reject(new Error(data.error)); }
+                    };
+                    es.onerror = () => { es.close(); reject(new Error('Connection lost')); };
+                });
+
+                // Trigger ZIP download
+                statusMsg.textContent = '✅ Done! Downloading ZIP...';
+                window.location.href = `${BACKEND_URL}/mesh-zip/${jobId}`;
+
+            } catch (err) {
+                statusMsg.className = 'status-message error';
+                statusMsg.style.display = 'block';
+                statusMsg.textContent = `❌ ${err.message}`;
+            } finally {
+                downloadMeshesBtn.disabled = false;
+            }
+        }
+
         // Download button handlers
         downloadCsvBtn.addEventListener('click', downloadCsv);
         downloadJsonBtn.addEventListener('click', downloadJson);
+        document.getElementById('downloadMeshesBtn').addEventListener('click', downloadAllMeshes);
 
         // Check if backend is available on page load
         fetch(`${BACKEND_URL}/health`)

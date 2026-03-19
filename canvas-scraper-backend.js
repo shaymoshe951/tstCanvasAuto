@@ -8,6 +8,9 @@ const cors = require('cors');
 const https = require('https');
 const path = require('path');
 const fs = require('fs');
+const archiver = require('archiver');
+const { Writable } = require('stream');
+const crypto = require('crypto');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -235,6 +238,118 @@ app.get('/fetch-scans', async (req, res) => {
     } finally {
         res.end();
     }
+});
+
+// --- Mesh bulk download ---
+
+const meshJobs = new Map(); // jobId → { status, progress, total, message, zip, error }
+
+function safeName(name) {
+    return (name || 'unnamed').replace(/[<>:"/\\|?*\x00-\x1f]/g, '_').trim() || 'unnamed';
+}
+
+function downloadBuffer(url) {
+    return new Promise((resolve, reject) => {
+        const u = new URL(url);
+        https.get({ hostname: u.hostname, path: u.pathname + (u.search || ''), headers: { 'User-Agent': 'node' } }, res => {
+            if (res.statusCode === 301 || res.statusCode === 302) {
+                return downloadBuffer(res.headers.location).then(resolve).catch(reject);
+            }
+            if (res.statusCode !== 200) {
+                res.resume();
+                return reject(new Error(`HTTP ${res.statusCode} for ${url}`));
+            }
+            const chunks = [];
+            res.on('data', c => chunks.push(c));
+            res.on('end', () => resolve(Buffer.concat(chunks)));
+            res.on('error', reject);
+        }).on('error', reject);
+    });
+}
+
+// POST /start-mesh-download — starts async job, returns jobId immediately
+app.post('/start-mesh-download', express.json(), (req, res) => {
+    const scans = (req.body.scans || []).filter(s => s.mesh_url);
+    if (!scans.length) return res.status(400).json({ error: 'No mesh URLs found in scan data' });
+
+    const jobId = crypto.randomUUID();
+    meshJobs.set(jobId, { status: 'running', progress: 0, total: scans.length, message: 'Starting...', zip: null, error: null });
+    res.json({ jobId });
+
+    // Run download in background
+    (async () => {
+        const job = meshJobs.get(jobId);
+        try {
+            const chunks = [];
+            const output = new Writable({ write(chunk, _, cb) { chunks.push(chunk); cb(); } });
+            const archive = archiver('zip', { zlib: { level: 0 } }); // store only — mesh zips are already compressed
+            const done = new Promise((resolve, reject) => {
+                archive.on('error', reject);
+                output.on('finish', resolve);
+            });
+            archive.pipe(output);
+
+            // Build CSV rows (all scans, with local path for those that have mesh)
+            const csvRows = [['Account Name', 'Group', 'Scan Text', 'Scan URL', 'Local Mesh Path'].join(',')];
+
+            for (let i = 0; i < scans.length; i++) {
+                const scan = scans[i];
+                job.progress = i;
+                job.message = `Downloading ${i + 1}/${scans.length}: ${scan.group} / ${scan.scan_text}`;
+                console.log(job.message);
+
+                const localPath = `${safeName(scan.group)}/${safeName(scan.scan_text)}.zip`;
+                csvRows.push([scan.account_name, scan.group, scan.scan_text, scan.scan_url, localPath]
+                    .map(f => `"${String(f).replace(/"/g, '""')}"`).join(','));
+
+                try {
+                    const buffer = await downloadBuffer(scan.mesh_url);
+                    archive.append(buffer, { name: localPath });
+                } catch (e) {
+                    console.error(`  Failed to download mesh for ${scan.scan_text}:`, e.message);
+                }
+            }
+
+            archive.append(csvRows.join('\n'), { name: 'scans.csv' });
+            archive.finalize();
+            await done;
+
+            job.zip = Buffer.concat(chunks);
+            job.progress = scans.length;
+            job.status = 'done';
+            job.message = `Done! ${scans.length} meshes packaged.`;
+        } catch (e) {
+            console.error('Mesh job error:', e);
+            job.status = 'error';
+            job.error = e.message;
+        }
+    })();
+});
+
+// GET /mesh-progress/:jobId — SSE progress stream
+app.get('/mesh-progress/:jobId', (req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive' });
+
+    const timer = setInterval(() => {
+        const job = meshJobs.get(req.params.jobId);
+        if (!job) { clearInterval(timer); return res.end(); }
+        const pct = job.total ? Math.round((job.progress / job.total) * 100) : 0;
+        res.write(`data: ${JSON.stringify({ status: job.status, progress: pct, message: job.message, error: job.error })}\n\n`);
+        if (job.status === 'done' || job.status === 'error') { clearInterval(timer); res.end(); }
+    }, 500);
+
+    req.on('close', () => clearInterval(timer));
+});
+
+// GET /mesh-zip/:jobId — serve the final ZIP
+app.get('/mesh-zip/:jobId', (req, res) => {
+    const job = meshJobs.get(req.params.jobId);
+    if (!job || job.status !== 'done' || !job.zip) return res.status(404).json({ error: 'ZIP not ready' });
+    const filename = `meshes_${new Date().toISOString().split('T')[0]}.zip`;
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(job.zip);
+    meshJobs.delete(req.params.jobId);
 });
 
 app.listen(PORT, '0.0.0.0', () => {
