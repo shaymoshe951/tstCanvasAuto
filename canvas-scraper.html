@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Canvas.io Scan Fetcher</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -610,52 +611,78 @@
             downloadMeshesBtn.style.display = hasMesh ? 'block' : 'none';
         }
 
-        // Mesh bulk download
+        function safeFolderName(name) {
+            return (name || 'unnamed').replace(/[<>:"/\\|?*]/g, '_').trim() || 'unnamed';
+        }
+
+        // Mesh bulk download — runs entirely in the browser using JSZip
         async function downloadAllMeshes() {
             const meshScans = scansData.filter(s => s.mesh_url);
             if (!meshScans.length) return;
 
             downloadMeshesBtn.disabled = true;
             const progressSection = document.getElementById('meshProgressSection');
-            const progressFill = document.getElementById('meshProgressFill');
+            const meshFill = document.getElementById('meshProgressFill');
             const statusMsg = document.getElementById('meshStatusMsg');
 
             progressSection.style.display = 'block';
-            progressFill.style.width = '0%';
-            progressFill.textContent = '0%';
-            statusMsg.textContent = 'Starting mesh download...';
+            meshFill.style.width = '0%';
+            meshFill.textContent = '0%';
+            statusMsg.className = 'status-message info';
+            statusMsg.style.display = 'block';
+            statusMsg.textContent = 'Starting...';
 
             try {
-                // Start job
-                const startRes = await fetch(`${BACKEND_URL}/start-mesh-download`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ scans: scansData })
-                });
-                const { jobId, error } = await startRes.json();
-                if (error) throw new Error(error);
+                const zip = new JSZip();
+                const csvRows = [['Account Name', 'Group', 'Scan Text', 'Scan URL', 'Local Mesh Path'].join(',')];
+                let failed = 0;
 
-                // Stream progress
-                await new Promise((resolve, reject) => {
-                    const es = new EventSource(`${BACKEND_URL}/mesh-progress/${jobId}`);
-                    es.onmessage = (e) => {
-                        const data = JSON.parse(e.data);
-                        progressFill.style.width = `${data.progress}%`;
-                        progressFill.textContent = `${data.progress}%`;
-                        statusMsg.textContent = data.message;
-                        if (data.status === 'done') { es.close(); resolve(); }
-                        if (data.status === 'error') { es.close(); reject(new Error(data.error)); }
-                    };
-                    es.onerror = () => { es.close(); reject(new Error('Connection lost')); };
-                });
+                for (let i = 0; i < meshScans.length; i++) {
+                    const scan = meshScans[i];
+                    const pct = Math.round((i / meshScans.length) * 100);
+                    meshFill.style.width = `${pct}%`;
+                    meshFill.textContent = `${pct}%`;
+                    statusMsg.textContent = `Downloading ${i + 1}/${meshScans.length}: ${scan.group} / ${scan.scan_text}`;
 
-                // Trigger ZIP download
-                statusMsg.textContent = '✅ Done! Downloading ZIP...';
-                window.location.href = `${BACKEND_URL}/mesh-zip/${jobId}`;
+                    const localPath = `${safeFolderName(scan.group)}/${safeFolderName(scan.scan_text)}.zip`;
+                    csvRows.push([scan.account_name, scan.group, scan.scan_text, scan.scan_url, localPath]
+                        .map(f => `"${String(f).replace(/"/g, '""')}"`).join(','));
+
+                    try {
+                        const response = await fetch(scan.mesh_url);
+                        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                        const buffer = await response.arrayBuffer();
+                        zip.file(localPath, buffer);
+                    } catch (e) {
+                        console.warn(`Skipped ${scan.scan_text}:`, e.message);
+                        failed++;
+                    }
+                }
+
+                zip.file('scans.csv', csvRows.join('\n'));
+
+                statusMsg.textContent = 'Generating ZIP file...';
+                meshFill.style.width = '95%';
+                meshFill.textContent = '95%';
+
+                const blob = await zip.generateAsync({ type: 'blob', compression: 'STORE' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `meshes_${new Date().toISOString().split('T')[0]}.zip`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                meshFill.style.width = '100%';
+                meshFill.textContent = '100%';
+                const note = failed ? ` (${failed} skipped due to errors)` : '';
+                statusMsg.className = 'status-message success';
+                statusMsg.textContent = `✅ Downloaded ${meshScans.length - failed} meshes${note}`;
 
             } catch (err) {
                 statusMsg.className = 'status-message error';
-                statusMsg.style.display = 'block';
                 statusMsg.textContent = `❌ ${err.message}`;
             } finally {
                 downloadMeshesBtn.disabled = false;
